@@ -20,17 +20,27 @@ def create_tables():
     
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS chat_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT,
         role TEXT,
         content TEXT,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
     )
     """)
-    
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS symptoms (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT,
+        symptom TEXT,
+        date_logged DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
     conn.commit()
     conn.close()
 
-# Register user (with password hashing)
+# Register user (Create)
 def register_user(username, name, password):
     conn = connect_db()
     cursor = conn.cursor()
@@ -45,7 +55,7 @@ def register_user(username, name, password):
     finally:
         conn.close()
 
-# Authenticate user (check password hash)
+# Authenticate user (Read)
 def authenticate_user(username, password):
     conn = connect_db()
     cursor = conn.cursor()
@@ -57,23 +67,27 @@ def authenticate_user(username, password):
         return True
     return False
 
-# Verify user login credentials
-def verify_user(username, password):
+# Update user details (Update)
+def update_user(username, new_name):
     conn = connect_db()
     cursor = conn.cursor()
-    
-    cursor.execute("SELECT password FROM users WHERE username = ?", (username,))
-    result = cursor.fetchone()
-    
+    cursor.execute("UPDATE users SET name = ? WHERE username = ?", (new_name, username))
+    conn.commit()
+    success = cursor.rowcount > 0
     conn.close()
-    
-    if result:
-        stored_hashed_password = result[0]
-        return bcrypt.checkpw(password.encode(), stored_hashed_password.encode())
-    
-    return False
+    return success
 
-# Reset password (update hash)
+# Delete user (Delete)
+def delete_user(username):
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM users WHERE username = ?", (username,))
+    conn.commit()
+    success = cursor.rowcount > 0
+    conn.close()
+    return success
+
+# Reset password (Update)
 def reset_password(username, new_password):
     conn = connect_db()
     cursor = conn.cursor()
@@ -85,7 +99,7 @@ def reset_password(username, new_password):
     conn.close()
     return success
 
-# Save chat messages
+# Save chat messages (Create)
 def save_message(username, role, content):
     conn = connect_db()
     cursor = conn.cursor()
@@ -93,14 +107,71 @@ def save_message(username, role, content):
     conn.commit()
     conn.close()
 
-# Load chat history
+# Load chat history (Read)
 def load_chat_history(username):
     conn = connect_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT role, content FROM chat_history WHERE username = ? ORDER BY timestamp", (username,))
+    cursor.execute("SELECT id, role, content, timestamp FROM chat_history WHERE username = ? ORDER BY timestamp", (username,))
     history = cursor.fetchall()
     conn.close()
     return history
+
+# Delete a specific chat message (Delete)
+def delete_message(message_id):
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM chat_history WHERE id = ?", (message_id,))
+    conn.commit()
+    success = cursor.rowcount > 0
+    conn.close()
+    return success
+
+# Delete all chat messages for a user (Delete)
+def delete_all_messages(username):
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM chat_history WHERE username = ?", (username,))
+    conn.commit()
+    success = cursor.rowcount > 0
+    conn.close()
+    return success
+
+# Log a symptom (Create)
+def log_symptom(username, symptom):
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO symptoms (username, symptom) VALUES (?, ?)", (username, symptom))
+    conn.commit()
+    conn.close()
+
+# Retrieve symptoms (Read)
+def get_symptoms(username):
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, symptom, date_logged FROM symptoms WHERE username = ? ORDER BY date_logged", (username,))
+    symptoms = cursor.fetchall()
+    conn.close()
+    return symptoms
+
+# Update a logged symptom (Update)
+def update_symptom(symptom_id, new_symptom):
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE symptoms SET symptom = ? WHERE id = ?", (new_symptom, symptom_id))
+    conn.commit()
+    success = cursor.rowcount > 0
+    conn.close()
+    return success
+
+# Delete a symptom (Delete)
+def delete_symptom(symptom_id):
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM symptoms WHERE id = ?", (symptom_id,))
+    conn.commit()
+    success = cursor.rowcount > 0
+    conn.close()
+    return success
 
 # Initialize database
 create_tables()
