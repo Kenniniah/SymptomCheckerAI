@@ -1,102 +1,105 @@
 import streamlit as st
-import bcrypt
-import sqlite3
 import ollama
+import database  # Import your database functions
 
-from database import register_user, reset_password, load_users, save_message, load_chat_history
+OLLAMA_SERVER = "ngrok http --url=harmless-definite-chimp.ngrok-free.app 80"
 
-# Initialize session state
-if "authenticated" not in st.session_state:
-    st.session_state["authenticated"] = False
-if "username" not in st.session_state:
-    st.session_state["username"] = ""
+# Streamlit app title
+st.title('Symptom Checker')
 
-# Function to verify user credentials
-def verify_user(username, password):
-    users = load_users()
-    for user in users:
-        if user["username"] == username and bcrypt.checkpw(password.encode(), user["password"].encode()):
-            return True
-    return False
+# Navigation: Login / Register / Chat / Reset Password
+menu = st.sidebar.radio("Navigation", ["Login", "Register", "Chat", "Reset Password"])
 
-# Function to handle login
-def login():
-    st.subheader("Login")
-    username = st.text_input("Username", key="login_username")
-    password = st.text_input("Password", type="password", key="login_password")
-    if st.button("Login"):
-        if verify_user(username, password):
-            st.session_state["authenticated"] = True
-            st.session_state["username"] = username
-            st.rerun()  # Redirect to chat
-        else:
-            st.error("Invalid username or password")
+# Session state to track logged-in user
+if "user" not in st.session_state:
+    st.session_state.user = None
 
-# Function to handle registration
-def register():
-    st.subheader("Register")
-    username = st.text_input("Username", key="register_username")
+# 🟢 Register Page
+if menu == "Register":
+    st.subheader("Create an Account")
+    username = st.text_input("Username")
     name = st.text_input("Full Name")
-    password = st.text_input("Password", type="password", key="register_password")
-    if st.button("Register"):
-        hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-        if register_user(username, name, hashed_password):
-            st.success("Registration successful! You can now log in.")
-        else:
-            st.error("Username already exists")
+    password = st.text_input("Password", type="password")
 
-# Function to reset password
-def reset():
-    st.subheader("Reset Password")
+    if st.button("Register"):
+        if username and name and password:
+            success = database.register_user(username, name, password)
+            if success:
+                st.success("Account created successfully! Please login.")
+            else:
+                st.error("Username already exists. Try a different one.")
+        else:
+            st.error("All fields are required.")
+
+# 🔵 Login Page
+elif menu == "Login":
+    st.subheader("Login to Your Account")
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+
+    if st.button("Login"):
+        if database.authenticate_user(username, password):
+            st.session_state.user = username
+            st.success("Login successful!")
+            st.rerun()  # Refresh the page
+        else:
+            st.error("Invalid username or password.")
+
+# 🟠 Password Reset Page
+elif menu == "Reset Password":
+    st.subheader("Reset Your Password")
     username = st.text_input("Enter your username")
     new_password = st.text_input("New Password", type="password")
+
     if st.button("Reset Password"):
-        hashed_password = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
-        if reset_password(username, hashed_password):
-            st.success("Password reset successfully! Please login.")
+        if username and new_password:
+            success = database.reset_password(username, new_password)
+            if success:
+                st.success("Password reset successful! You can now log in with your new password.")
+            else:
+                st.error("Username not found. Please check your username.")
         else:
-            st.error("User not found")
+            st.error("Both fields are required.")
 
-# Function to display chat page
-def chat():
-    st.title("Chatbot")
-    st.write(f"Welcome, {st.session_state['username']}!")
+# 🟡 Chat Page (Only if logged in)
+elif menu == "Chat":
+    if st.session_state.user is None:
+        st.warning("Please login first.")
+        st.stop()
 
-    if st.button("Logout"):
-        st.session_state["authenticated"] = False
-        st.session_state["username"] = ""
-        st.rerun()
+    st.subheader(f"Welcome, {st.session_state.user}!")
+    st.write("Describe your symptoms, and I'll try to assist.")
 
-    prompt = st.chat_input("Enter your message")
-    
-    if prompt:
-        save_message(st.session_state["username"], "user", prompt)
+    # Logout button
+    if st.sidebar.button("Log Out"):
+        st.session_state.user = None
+        st.success("Logged out successfully!")
+        st.rerun()  # Refresh the page
 
-        result = ollama.chat(model="llama3.2:3b", messages=[{"role": "user", "content": prompt}])
-        response = result["message"]["content"]
-
-        save_message(st.session_state["username"], "assistant", response)
-        
-        with st.chat_message("user"):
-            st.write(prompt)
-        with st.chat_message("assistant"):
-            st.write(response)
-
-    history = load_chat_history(st.session_state["username"])
-    for role, content in history:
+    # Load chat history
+    chat_history = database.load_chat_history(st.session_state.user)
+    for role, content in chat_history:
         with st.chat_message(role):
             st.write(content)
 
-# **Main logic to determine which page to show**
-if st.session_state["authenticated"]:
-    chat()
-else:
-    st.title("Welcome to Symptom Checker")
-    option = st.sidebar.radio("Select an option", ["Login", "Register", "Reset Password"])
+    # User input
+    prompt = st.chat_input("What are your symptoms?")
     
-    if option == "Login":
-        login()
-    elif option == "Register":
-        register()
-    elif option == "Reset Password":
-        reset()
+    if prompt:
+        with st.chat_message("user"):
+            st.write(prompt)
+        
+        # Save user message to history
+        database.save_message(st.session_state.user, "user", prompt)
+
+        # Process AI response
+        with st.spinner("Finding your symptoms..."):
+            result = ollama.chat(model='llama3.2:3b', messages=[{"role": "user", "content": prompt}])
+            response = result["message"]["content"]
+        
+        # Display AI response
+        with st.chat_message("assistant"):
+            st.write(response)
+
+        # Save AI response to history
+        database.save_message(st.session_state.user, "assistant", response)
