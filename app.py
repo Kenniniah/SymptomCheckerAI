@@ -1,5 +1,4 @@
 import streamlit as st
-import ollama
 import database  # Import your database functions
 
 OLLAMA_SERVER = "ngrok http --url=harmless-definite-chimp.ngrok-free.app 80"
