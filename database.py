@@ -57,6 +57,22 @@ def authenticate_user(username, password):
         return True
     return False
 
+# Verify user login credentials
+def verify_user(username, password):
+    conn = connect_db()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT password FROM users WHERE username = ?", (username,))
+    result = cursor.fetchone()
+    
+    conn.close()
+    
+    if result:
+        stored_hashed_password = result[0]
+        return bcrypt.checkpw(password.encode(), stored_hashed_password.encode())
+    
+    return False
+
 # Reset password (update hash)
 def reset_password(username, new_password):
     conn = connect_db()
