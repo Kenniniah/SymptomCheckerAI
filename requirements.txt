@@ -1,4 +1,5 @@
 ollama
+streamlit
 ngrok
 bcrypt
 sqlite3
