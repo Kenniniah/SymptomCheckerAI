@@ -4,7 +4,7 @@ import time
 import requests
 from database import save_message, load_chat_history, delete_conversation
 
-OLLAMA_URL = "ngrok http --url=harmless-definite-chimp.ngrok-free.app 80"  # Replace with your actual ngrok or Cloudflare URL
+OLLAMA_URL = "ngrok http  https://296e-112-210-231-149.ngrok-free.app=harmless-definite-chimp.ngrok-free.app 80"  # Replace with your actual ngrok or Cloudflare URL
 
 def get_response(prompt):
     response = requests.post(
@@ -63,18 +63,26 @@ if prompt:
     # Show a spinner while the Symptom Checker AI processes the request
     with st.spinner("Checking symptoms... Please wait."):
         # Get assistant's response using Ollama
-        result = ollama.chat(model="llama3.2:3b", messages=[{"role": "user", "content": prompt}])
-        response = result["message"]["content"]
+        response = requests.post(
+    f"{OLLAMA_URL}/api/chat",
+    json={"model": "llama3", "messages": [{"role": "user", "content": prompt}]}
+)
 
-    # Save assistant's response
-    save_message(st.session_state["username"], "assistant", response)
+if response.status_code == 200:
+    response_data = response.json()
+    assistant_reply = response_data["message"]["content"]
+else:
+    assistant_reply = "Sorry, I'm having trouble connecting to the AI model."
 
-    # Display the response
-    with st.chat_message("user", avatar="😷"):  # User's emoji
+# Save assistant's response
+save_message(st.session_state["username"], "assistant", assistant_reply)
+
+# Display the response
+with st.chat_message("user", avatar="😷"):  # User's emoji
         st.write(prompt)
 
     # Display usr message
-    with st.chat_message("assistant", avatar="🧑‍⚕️"):  # Assistant's emoji
+with st.chat_message("assistant", avatar="🧑‍⚕️"):  # Assistant's emoji
         response_text = ""  # Define response_text before use
         message_placeholder = st.empty()  # Placeholder for the message
         for chunk in stream_data(response):
