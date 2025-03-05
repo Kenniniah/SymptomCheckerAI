@@ -1,7 +1,5 @@
 import streamlit as st
 import requests
-response = requests.post(url, json=data, headers=headers, timeout=30)  # 30 sec timeout
-
 from database import get_conversations, save_message, load_chat_history, delete_conversation
 
 # Use ngrok URL
