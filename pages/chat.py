@@ -97,8 +97,8 @@ prompt = st.text_input("Describe your symptoms:")
 
 if prompt:
     # Save user message
-    save_message(username, "user", prompt, st.session_state["selected_conversation"])
-
+    save_message(username, "user", prompt, st.session_state.get("selected_conversation", None))
+    
     with st.spinner("Checking symptoms... Please wait."):
         response = chat_with_ollama(prompt)  # Use ngrok-based function
 
