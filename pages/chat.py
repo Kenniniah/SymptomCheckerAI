@@ -1,19 +1,30 @@
 import streamlit as st
 import ollama
+import requests
 from database import get_conversations, save_message, load_chat_history, delete_conversation
+
+OLLAMA_SERVER_URL = "https://7d5a-112-210-231-149.ngrok-free.app"
+
+def chat_with_ollama(prompt):
+    url = f"{OLLAMA_SERVER_URL}/api/chat"
+    headers = {"Content-Type": "application/json"}
+    data = {
+        "model": "llama3",
+        "messages": [{"role": "user", "content": prompt}]
+    }
+
+    try:
+        response = requests.post(url, json=data, headers=headers)
+        response.raise_for_status()
+        return response.json()["message"]["content"]
+    except requests.exceptions.RequestException as e:
+        return f"Error: Could not connect to Ollama ({str(e)})"
+
 
 st.set_page_config(page_title="Chat", layout="wide")
 
 st.title("Symptom Checker AI")
 
-try:
-    result = ollama.chat(model="llama3", messages=[{"role": "user", "content": "Hello"}])
-    response = result["message"]["content"]
-except Exception as e:
-    response = "Error: Could not connect to Ollama. Please check if it's running."
-    st.error(response)
-
-st.write(response)
 
 # Ensure the user is authenticated
 if "authenticated" not in st.session_state or not st.session_state["authenticated"]:
