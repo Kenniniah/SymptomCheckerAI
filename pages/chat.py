@@ -3,6 +3,8 @@ import ollama
 import time
 from database import save_message, load_chat_history, delete_conversation
 
+OLLAMA_SERVER = "ngrok http --url=harmless-definite-chimp.ngrok-free.app 80"
+
 st.title("Symptom Checker AI")
 
 # Ensure the user is authenticated
