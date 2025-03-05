@@ -1,5 +1,7 @@
 import streamlit as st
 import requests
+response = requests.post(url, json=data, headers=headers, timeout=30)  # 30 sec timeout
+
 from database import get_conversations, save_message, load_chat_history, delete_conversation
 
 # Use ngrok URL
@@ -10,7 +12,7 @@ def chat_with_ollama(prompt):
     url = f"{OLLAMA_SERVER_URL}/api/chat"
     headers = {"Content-Type": "application/json"}
     data = {
-        "model": "llama3",
+        "model": "mistral",
         "messages": [{"role": "user", "content": prompt}]
     }
 
