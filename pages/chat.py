@@ -4,7 +4,7 @@ import time
 import requests
 from database import save_message, load_chat_history, delete_conversation
 
-OLLAMA_URL = "ngrok http  https://296e-112-210-231-149.ngrok-free.app=harmless-definite-chimp.ngrok-free.app 80"  # Replace with your actual ngrok or Cloudflare URL
+OLLAMA_URL = "ngrok http https://296e-112-210-231-149.ngrok-free.app=harmless-definite-chimp.ngrok-free.app 80" 
 
 def get_response(prompt):
     try:
