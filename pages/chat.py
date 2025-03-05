@@ -4,14 +4,18 @@ import time
 import requests
 from database import save_message, load_chat_history, delete_conversation
 
-NGROK_URL = "ngrok http --url=harmless-definite-chimp.ngrok-free.app 80"
-def chat_with_ollama(message):
+OLLAMA_URL = "ngrok http --url=harmless-definite-chimp.ngrok-free.app 80"  # Replace with your actual ngrok or Cloudflare URL
+
+def get_response(prompt):
     response = requests.post(
-        f"{NGROK_URL}/api/chat",
-        json={"model": "llama3.2:3b", "messages": [{"role": "user", "content": message}]}
+        f"{OLLAMA_URL}/api/generate",
+        json={"model": "llama3.2:3b", "messages": [{"role": "user", "content": prompt}]}
     )
     return response.json()["message"]["content"]
 
+prompt = "What are the symptoms of flu?"
+response = get_response(prompt)
+print(response)
 st.title("Symptom Checker AI")
 
 # Ensure the user is authenticated
