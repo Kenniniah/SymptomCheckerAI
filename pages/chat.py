@@ -68,8 +68,8 @@ if selected_convo and st.session_state["selected_conversation"] != selected_conv
         st.session_state["messages"] = load_chat_history(username, selected_convo)
 
     # Delete conversation button
-    if st.sidebar.button("🗑️ Delete Conversation"):
-        delete_conversation(username, selected_convo)
+        if st.sidebar.button("🗑️ Delete Conversation"):
+            delete_conversation(username, selected_convo)
         st.session_state["selected_conversation"] = None  # Reset selection
         st.rerun()  # Refresh the UI after deletion
 else:
