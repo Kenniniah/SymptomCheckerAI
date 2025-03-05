@@ -1,9 +1,16 @@
 import streamlit as st
 import ollama
 import time
+import requests
 from database import save_message, load_chat_history, delete_conversation
 
-OLLAMA_SERVER = "ngrok http --url=harmless-definite-chimp.ngrok-free.app 80"
+NGROK_URL = "ngrok http --url=harmless-definite-chimp.ngrok-free.app 80"
+def chat_with_ollama(message):
+    response = requests.post(
+        f"{NGROK_URL}/api/chat",
+        json={"model": "llama3.2:3b", "messages": [{"role": "user", "content": message}]}
+    )
+    return response.json()["message"]["content"]
 
 st.title("Symptom Checker AI")
 
@@ -80,8 +87,4 @@ if st.button("Delete Conversation"):
     delete_conversation(st.session_state["username"])
     st.success("Conversation deleted successfully!")
     st.session_state.messages = []  # Clear chat history
-    # Display the new messages
-    #with st.chat_message("user"):
-    #    st.write(prompt)
-    #with st.chat_message("assistant"):
-    #    st.write(response)
+   
