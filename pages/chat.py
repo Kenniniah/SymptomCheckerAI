@@ -1,101 +1,70 @@
 import streamlit as st
 import ollama
-import time
-import requests
-from database import save_message, load_chat_history, delete_conversation
+from database import save_message, load_chat_history, get_conversations, delete_conversation
 
-OLLAMA_URL = "http://localhost:8501"
-#"ngrok http https://296e-112-210-231-149.ngrok-free.app=harmless-definite-chimp.ngrok-free.app 80" 
+st.set_page_config(page_title="Chat", layout="wide")
 
-def get_response(prompt):
-    try:
-        response = requests.post(
-            f"{OLLAMA_URL}/api/chat",
-            json={"model": "llama3.2:3b", "messages": [{"role": "user", "content": prompt}]}
-        )
-
-        # Check if the request was successful
-        if response.status_code == 200:
-            response_data = response.json()
-            return response_data.get("message", {}).get("content", "No response received.")
-        else:
-            return f"Error: Received status code {response.status_code} from API."
-
-    except requests.exceptions.RequestException as e:
-        return f"Error: Unable to connect to the server. Details: {str(e)}"
+st.title("Symptom Checker AI")
 
 # Ensure the user is authenticated
 if "authenticated" not in st.session_state or not st.session_state["authenticated"]:
     st.warning("You need to log in first.")
-    st.button("Go to Login", on_click=lambda: st.session_state.update(authenticated=False, username=""))
-    st.switch_page("app.py")
-    st.stop()  # Prevents the rest of the page from being displayed
+    if st.button("Go to Login"):
+        st.session_state["authenticated"] = False
+        st.session_state["username"] = ""
+        st.switch_page("app.py")  # Redirect to login
+    st.stop()  # Prevents unauthorized users from seeing the chat page
 
-st.write(f"Welcome, {st.session_state['username']}!")
+username = st.session_state["username"]
+st.write(f"Welcome, {username}!")
 
-# Logout functionality
-if st.button("Logout"):
+# Sidebar for saved conversations
+st.sidebar.title("Conversations")
+
+# Load conversation list
+conversations = get_conversations(username)
+
+if conversations:
+    selected_convo = st.sidebar.radio("Select a conversation:", conversations)
+
+    # Delete conversation button
+    if st.sidebar.button("🗑️ Delete Conversation"):
+        delete_conversation(username, selected_convo)
+        st.experimental_rerun()  # Refresh sidebar after deletion
+
+    # Load selected conversation
+    if "selected_conversation" not in st.session_state or st.session_state["selected_conversation"] != selected_convo:
+        st.session_state["selected_conversation"] = selected_convo
+        st.session_state.messages = load_chat_history(username, selected_convo)
+else:
+    st.sidebar.write("No conversations found.")
+
+# Logout button
+if st.sidebar.button("🚪 Logout"):
     st.session_state["authenticated"] = False
     st.session_state["username"] = ""
     st.success("Logged out successfully!")
-    st.switch_page("app.py")  # Switch to login page after logout
+    st.switch_page("app.py")  # Redirect to login
 
-# Display chat history (only once)
-if 'messages' not in st.session_state:
-    st.session_state.messages = []
-
-# Display previous chat history
-for role, content in load_chat_history(st.session_state["username"]):
-    st.session_state.messages.append({"role": role, "content": content})
-
-    if role == "user":
-        avatar = "😷"  # Emoji for the user
-    else:
-        avatar = "🧑‍⚕️"  # Emoji for the assistant
-
-    with st.chat_message(role):
+# Display chat history
+for role, content in st.session_state.get("messages", []):
+    avatar = "😷" if role == "user" else "🧑‍⚕️"
+    with st.chat_message(role, avatar=avatar):
         st.write(content)
 
-# Chat input and interaction
+# Chat input
 prompt = st.text_input("Describe your symptoms:")
 
-def stream_data(text, delay: float = 0.02):
-    """Streams the response word by word with a specified delay."""
-    sentences = text.split('. ')
-    for sentence in sentences:
-        yield sentence + '. '
-        time.sleep(delay)
-
 if prompt:
-    # Save user message
-    save_message(st.session_state["username"], "user", prompt)
+    save_message(username, "user", prompt, st.session_state["selected_conversation"])
 
-     # Initialize response_text to avoid NameError
-    response_text = get_response(prompt)
-
-    # Show a spinner while the Symptom Checker AI processes the request
     with st.spinner("Checking symptoms... Please wait."):
+        result = ollama.chat(model="llama3.2:3b", messages=[{"role": "user", "content": prompt}])
+        response = result["message"]["content"]
 
-    # Save assistant's response
-        save_message(st.session_state["username"], "assistant", response_text)
+    save_message(username, "assistant", response, st.session_state["selected_conversation"])
 
-    # Display user message
     with st.chat_message("user", avatar="😷"):
         st.write(prompt)
-
-    # Display assistant response
     with st.chat_message("assistant", avatar="🧑‍⚕️"):
-        message_placeholder = st.empty()
-        streamed_text = ""
-        for chunk in stream_data(response_text):
-            streamed_text += chunk
-            message_placeholder.markdown(streamed_text)
-
-# Option to delete conversation
-if st.button("Delete Conversation"):
-    delete_conversation(st.session_state["username"])
-    st.success("Conversation deleted successfully!")
-    st.session_state.messages = []
-
-
-    
+        st.write(response)
