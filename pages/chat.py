@@ -79,14 +79,16 @@ for role, content in st.session_state["messages"]:
     with st.chat_message(role, avatar=avatar):
         st.write(content)
 
-# Chat input
-prompt = st.text_input("Describe your symptoms:")
+# Chat input with a Submit button
+with st.form(key="chat_form"):
+    prompt = st.text_input("Describe your symptoms:", key="user_input")
+    submit_button = st.form_submit_button("Submit")
 
-if prompt and st.session_state.get("selected_conversation"):
+if submit_button and prompt and st.session_state.get("selected_conversation"):
     # Save user message
     save_message(username, "user", prompt, st.session_state["selected_conversation"])
 
-    with st.spinner("Checking symptoms... Please wait."):
+    with st.spinner("Checking symptoms... Please wait."):  # **Added spinner here**
         response = chat_with_ollama(prompt)  # Use ngrok-based function
 
     # Save AI response
@@ -97,3 +99,7 @@ if prompt and st.session_state.get("selected_conversation"):
         st.write(prompt)
     with st.chat_message("assistant", avatar="🧑‍⚕️"):
         st.write(response)
+
+    # Add response to session state to maintain chat history
+    st.session_state["messages"].append(("user", prompt))
+    st.session_state["messages"].append(("assistant", response))
