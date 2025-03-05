@@ -16,16 +16,10 @@ def chat_with_ollama(prompt):
 
     try:
         response = requests.post(url, json=data, headers=headers)
-        response.raise_for_status()  # Check for HTTP errors
-        
-        # Debug: Print raw response
-        print("Raw response:", response.json())
-
-        return response.json().get("message", {}).get("content", "Error: Unexpected response format.")
+        response.raise_for_status()
+        return response.json()["message"]["content"]
     except requests.exceptions.RequestException as e:
-        print("Error:", e)  # Debugging
         return f"Error: Could not connect to Ollama ({str(e)})"
-
 
 # Streamlit UI Setup
 st.set_page_config(page_title="Chat", layout="wide")
@@ -57,13 +51,12 @@ if conversations:
     # Ensure selected conversation is stored in session state
     if "selected_conversation" not in st.session_state or st.session_state["selected_conversation"] != selected_convo:
         st.session_state["selected_conversation"] = selected_convo
-        st.session_state["messages"] = load_chat_history(username, selected_convo) if selected_convo else []
+        st.session_state["messages"] = load_chat_history(username, selected_convo)
 
     # Delete conversation button
-    if st.sidebar.button("🗑️ Delete Conversation") and selected_convo:
+    if st.sidebar.button("🗑️ Delete Conversation"):
         delete_conversation(username, selected_convo)
         st.session_state["selected_conversation"] = None  # Reset selection
-        st.session_state["messages"] = []  # Clear chat messages
         st.rerun()  # Refresh the UI after deletion
 else:
     st.sidebar.write("No conversations found.")
@@ -85,32 +78,21 @@ for role, content in st.session_state["messages"]:
     with st.chat_message(role, avatar=avatar):
         st.write(content)
 
-# Chat input with a Submit button
-with st.form(key="chat_form"):
-    prompt = st.text_input("Describe your symptoms:", key="user_input")
-    submit_button = st.form_submit_button("Submit")
+# Chat input
+prompt = st.text_input("Describe your symptoms:")
 
-if submit_button and prompt and st.session_state.get("selected_conversation"):
-    st.write("Submitting request to Ollama...")  # Debugging
-
+if prompt:
     # Save user message
     save_message(username, "user", prompt, st.session_state["selected_conversation"])
 
     with st.spinner("Checking symptoms... Please wait."):
-        response = chat_with_ollama(prompt)
-    
-    st.write(f"Debug - Received response: {response}")  # Debugging
+        response = chat_with_ollama(prompt)  # Use ngrok-based function
 
     # Save AI response
     save_message(username, "assistant", response, st.session_state["selected_conversation"])
-
 
     # Display chat messages
     with st.chat_message("user", avatar="😷"):
         st.write(prompt)
     with st.chat_message("assistant", avatar="🧑‍⚕️"):
         st.write(response)
-
-    # Add response to session state to maintain chat history
-    st.session_state["messages"].append(("user", prompt))
-    st.session_state["messages"].append(("assistant", response))
