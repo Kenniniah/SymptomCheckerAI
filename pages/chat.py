@@ -12,16 +12,22 @@ def chat_with_ollama(prompt):
 
     headers = {"Content-Type": "application/json"}
     data = {
-        "model": "mistral",  # Use the correct model
+        "model": "mistral",
         "messages": [{"role": "user", "content": prompt}]
     }
 
     try:
-        response = requests.post(url, json=data, headers=headers, timeout=30)  # Set timeout
-        response.raise_for_status()  # Raise an error if response is not 200
-        return response.json()["message"]["content"]
+        response = requests.post(url, json=data, headers=headers, timeout=30)
+        response.raise_for_status()  # Raise an error if the request failed
+
+        print("Raw response text:", response.text)  # Debugging line
+
+        json_response = response.json()  # Attempt to parse JSON
+        return json_response["message"]["content"]
     except requests.exceptions.RequestException as e:
         return f"Error: Could not connect to Ollama ({str(e)})"
+    except ValueError as e:  # Handles JSON decoding issues
+        return f"Error: Invalid JSON response from Ollama ({str(e)})"
 
 
 # Streamlit UI Setup
