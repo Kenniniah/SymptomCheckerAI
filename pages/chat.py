@@ -3,7 +3,7 @@ import requests
 from database import get_conversations, save_message, load_chat_history, delete_conversation
 
 # Use ngrok URL
-OLLAMA_SERVER_URL = "https://7d5a-112-210-231-149.ngrok-free.app"
+OLLAMA_SERVER_URL = "https://c681-112-210-231-149.ngrok-free.app"
 
 # Function to chat with Ollama
 def chat_with_ollama(prompt):
