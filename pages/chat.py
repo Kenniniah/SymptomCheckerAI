@@ -4,13 +4,14 @@ import time
 import requests
 from database import save_message, load_chat_history, delete_conversation
 
-OLLAMA_URL = "ngrok http https://296e-112-210-231-149.ngrok-free.app=harmless-definite-chimp.ngrok-free.app 80" 
+OLLAMA_URL = "http://localhost:8501"
+#"ngrok http https://296e-112-210-231-149.ngrok-free.app=harmless-definite-chimp.ngrok-free.app 80" 
 
 def get_response(prompt):
     try:
         response = requests.post(
             f"{OLLAMA_URL}/api/chat",
-            json={"model": "llama3", "messages": [{"role": "user", "content": prompt}]}
+            json={"model": "llama3.2:3b", "messages": [{"role": "user", "content": prompt}]}
         )
 
         # Check if the request was successful
@@ -70,7 +71,7 @@ if prompt:
     save_message(st.session_state["username"], "user", prompt)
 
      # Initialize response_text to avoid NameError
-    response_text = "Error: No response received."
+    response_text = get_response(prompt)
 
     # Show a spinner while the Symptom Checker AI processes the request
     with st.spinner("Checking symptoms... Please wait."):
