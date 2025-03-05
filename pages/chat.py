@@ -1,6 +1,6 @@
 import streamlit as st
 import ollama
-from database import save_message, load_chat_history, get_conversations, delete_conversation
+from database import get_conversations, save_message, load_chat_history, delete_conversation
 
 st.set_page_config(page_title="Chat", layout="wide")
 
@@ -30,7 +30,7 @@ if conversations:
     # Delete conversation button
     if st.sidebar.button("🗑️ Delete Conversation"):
         delete_conversation(username, selected_convo)
-        st.experimental_rerun()  # Refresh sidebar after deletion
+        st.rerun()  # Refresh sidebar after deletion
 
     # Load selected conversation
     if "selected_conversation" not in st.session_state or st.session_state["selected_conversation"] != selected_convo:
