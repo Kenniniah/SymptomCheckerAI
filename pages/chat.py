@@ -30,11 +30,12 @@ st.title("Symptom Checker AI")
 if "authenticated" not in st.session_state or not st.session_state["authenticated"]:
     st.warning("You need to log in first.")
     if st.button("Go to Login"):
-        st.session_state["page"] = "login"  # Use session state for navigation
-        st.rerun()  # Rerun the app to apply changes
+        st.session_state["authenticated"] = False
+        st.session_state["username"] = ""
+        st.switch_page("app.py")  # Keep navigation as requested
     st.stop()
 
-username = st.session_state.get("username", "Unknown")
+username = st.session_state["username"]
 st.write(f"Welcome, {username}!")
 
 # Sidebar for conversations
@@ -62,9 +63,10 @@ else:
 
 # Logout button
 if st.sidebar.button("🚪 Logout"):
-    st.session_state.clear()  # Clears all session state variables
+    st.session_state["authenticated"] = False
+    st.session_state["username"] = ""
     st.success("Logged out successfully!")
-    st.rerun()
+    st.switch_page("app.py")  # Keep navigation as requested
 
 # Ensure messages exist in session state
 if "messages" not in st.session_state:
@@ -94,4 +96,3 @@ if prompt:
         st.write(prompt)
     with st.chat_message("assistant", avatar="🧑‍⚕️"):
         st.write(response)
-
