@@ -7,12 +7,21 @@ from database import save_message, load_chat_history, delete_conversation
 OLLAMA_URL = "ngrok http  https://296e-112-210-231-149.ngrok-free.app=harmless-definite-chimp.ngrok-free.app 80"  # Replace with your actual ngrok or Cloudflare URL
 
 def get_response(prompt):
-    response = requests.post(
-        f"{OLLAMA_URL}/api/generate",
-        json={"model": "llama3.2:3b", "messages": [{"role": "user", "content": prompt}]}
-    )
-    return response.json()["message"]["content"]
+    try:
+        response = requests.post(
+            f"{OLLAMA_URL}/api/chat",
+            json={"model": "llama3", "messages": [{"role": "user", "content": prompt}]}
+        )
 
+        # Check if the request was successful
+        if response.status_code == 200:
+            response_data = response.json()
+            return response_data.get("message", {}).get("content", "No response received.")
+        else:
+            return f"Error: Received status code {response.status_code} from API."
+
+    except requests.exceptions.RequestException as e:
+        return f"Error: Unable to connect to the server. Details: {str(e)}"
 
 # Ensure the user is authenticated
 if "authenticated" not in st.session_state or not st.session_state["authenticated"]:
@@ -63,36 +72,24 @@ if prompt:
     # Show a spinner while the Symptom Checker AI processes the request
     with st.spinner("Checking symptoms... Please wait."):
         # Get assistant's response using Ollama
-        response = requests.post(
-    f"{OLLAMA_URL}/api/chat",
-    json={"model": "llama3", "messages": [{"role": "user", "content": prompt}]}
-)
 
-if response.status_code == 200:
-    response_data = response.json()
-    assistant_reply = response_data["message"]["content"]
-else:
-    assistant_reply = "Sorry, I'm having trouble connecting to the AI model."
+    # Save assistant's response
+        save_message(st.session_state["username"], "assistant", response_text)
 
-# Save assistant's response
-save_message(st.session_state["username"], "assistant", assistant_reply)
-
-# Display the response
-with st.chat_message("user", avatar="😷"):  # User's emoji
+    # Display user message
+    with st.chat_message("user", avatar="😷"):
         st.write(prompt)
 
-    # Display usr message
-with st.chat_message("assistant", avatar="🧑‍⚕️"):  # Assistant's emoji
-        response_text = ""  # Define response_text before use
-        message_placeholder = st.empty()  # Placeholder for the message
-        for chunk in stream_data(response):
-            response_text += chunk  # Accumulate words into a complete response
-            message_placeholder.markdown(response_text)  # Display accumulated response
-            
+    # Display assistant response
+    with st.chat_message("assistant", avatar="🧑‍⚕️"):
+        message_placeholder = st.empty()
+        streamed_text = ""
+        for chunk in stream_data(response_text):
+            streamed_text += chunk
+            message_placeholder.markdown(streamed_text)
 
-# Option to delete entire conversation history
+# Option to delete conversation
 if st.button("Delete Conversation"):
     delete_conversation(st.session_state["username"])
     st.success("Conversation deleted successfully!")
-    st.session_state.messages = []  # Clear chat history
-   
+    st.session_state.messages = []
