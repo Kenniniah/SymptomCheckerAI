@@ -3,7 +3,7 @@ import requests
 from database import get_conversations, save_message, load_chat_history, delete_conversation
 
 # Use ngrok URL
-OLLAMA_SERVER_URL = " https://f006-112-210-231-149.ngrok-free.app"
+OLLAMA_SERVER_URL = "https://f006-112-210-231-149.ngrok-free.app"
 
 # Function to chat with Ollama
 def chat_with_ollama(prompt):
@@ -17,7 +17,7 @@ def chat_with_ollama(prompt):
     try:
         response = requests.post(url, json=data, headers=headers)
         response.raise_for_status()
-        return response.json()["message"]["content"]
+        return response.json().get("message", {}).get("content", "Error: Unexpected response format.")
     except requests.exceptions.RequestException as e:
         return f"Error: Could not connect to Ollama ({str(e)})"
 
@@ -51,12 +51,13 @@ if conversations:
     # Ensure selected conversation is stored in session state
     if "selected_conversation" not in st.session_state or st.session_state["selected_conversation"] != selected_convo:
         st.session_state["selected_conversation"] = selected_convo
-        st.session_state["messages"] = load_chat_history(username, selected_convo)
+        st.session_state["messages"] = load_chat_history(username, selected_convo) if selected_convo else []
 
     # Delete conversation button
-    if st.sidebar.button("🗑️ Delete Conversation"):
+    if st.sidebar.button("🗑️ Delete Conversation") and selected_convo:
         delete_conversation(username, selected_convo)
         st.session_state["selected_conversation"] = None  # Reset selection
+        st.session_state["messages"] = []  # Clear chat messages
         st.rerun()  # Refresh the UI after deletion
 else:
     st.sidebar.write("No conversations found.")
@@ -81,7 +82,7 @@ for role, content in st.session_state["messages"]:
 # Chat input
 prompt = st.text_input("Describe your symptoms:")
 
-if prompt:
+if prompt and st.session_state.get("selected_conversation"):
     # Save user message
     save_message(username, "user", prompt, st.session_state["selected_conversation"])
 
