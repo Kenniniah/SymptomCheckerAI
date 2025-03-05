@@ -12,7 +12,7 @@ def chat_with_ollama(prompt):
 
     headers = {"Content-Type": "application/json"}
     data = {
-        "model": "mistral",
+        "model": "llama3.2:3b",
         "messages": [{"role": "user", "content": prompt}],
         "stream": False
     }
