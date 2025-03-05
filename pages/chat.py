@@ -69,9 +69,11 @@ if prompt:
     # Save user message
     save_message(st.session_state["username"], "user", prompt)
 
+     # Initialize response_text to avoid NameError
+    response_text = "Error: No response received."
+
     # Show a spinner while the Symptom Checker AI processes the request
     with st.spinner("Checking symptoms... Please wait."):
-        # Get assistant's response using Ollama
 
     # Save assistant's response
         save_message(st.session_state["username"], "assistant", response_text)
@@ -93,3 +95,6 @@ if st.button("Delete Conversation"):
     delete_conversation(st.session_state["username"])
     st.success("Conversation deleted successfully!")
     st.session_state.messages = []
+
+
+    
