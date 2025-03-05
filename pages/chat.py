@@ -16,10 +16,16 @@ def chat_with_ollama(prompt):
 
     try:
         response = requests.post(url, json=data, headers=headers)
-        response.raise_for_status()
+        response.raise_for_status()  # Check for HTTP errors
+        
+        # Debug: Print raw response
+        print("Raw response:", response.json())
+
         return response.json().get("message", {}).get("content", "Error: Unexpected response format.")
     except requests.exceptions.RequestException as e:
+        print("Error:", e)  # Debugging
         return f"Error: Could not connect to Ollama ({str(e)})"
+
 
 # Streamlit UI Setup
 st.set_page_config(page_title="Chat", layout="wide")
