@@ -13,10 +13,6 @@ def get_response(prompt):
     )
     return response.json()["message"]["content"]
 
-prompt = "What are the symptoms of flu?"
-response = get_response(prompt)
-print(response)
-st.title("Symptom Checker AI")
 
 # Ensure the user is authenticated
 if "authenticated" not in st.session_state or not st.session_state["authenticated"]:
