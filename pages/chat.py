@@ -3,7 +3,7 @@ import requests
 from database import get_conversations, save_message, load_chat_history, delete_conversation
 
 # Use ngrok URL
-OLLAMA_SERVER_URL = "https://f006-112-210-231-149.ngrok-free.app"
+OLLAMA_SERVER_URL = " https://73e6-112-210-231-149.ngrok-free.app"
 
 # Function to chat with Ollama
 def chat_with_ollama(prompt):
@@ -91,14 +91,19 @@ with st.form(key="chat_form"):
     submit_button = st.form_submit_button("Submit")
 
 if submit_button and prompt and st.session_state.get("selected_conversation"):
+    st.write("Submitting request to Ollama...")  # Debugging
+
     # Save user message
     save_message(username, "user", prompt, st.session_state["selected_conversation"])
 
-    with st.spinner("Checking symptoms... Please wait."):  # **Added spinner here**
-        response = chat_with_ollama(prompt)  # Use ngrok-based function
+    with st.spinner("Checking symptoms... Please wait."):
+        response = chat_with_ollama(prompt)
+    
+    st.write(f"Debug - Received response: {response}")  # Debugging
 
     # Save AI response
     save_message(username, "assistant", response, st.session_state["selected_conversation"])
+
 
     # Display chat messages
     with st.chat_message("user", avatar="😷"):
