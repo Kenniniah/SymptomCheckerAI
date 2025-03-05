@@ -59,7 +59,11 @@ if conversations:
     selected_convo = st.sidebar.radio("Select a conversation:", conversations)
 
     # Ensure selected conversation is stored in session state
-    if "selected_conversation" not in st.session_state or st.session_state["selected_conversation"] != selected_convo:
+    if "selected_conversation" not in st.session_state:
+        st.session_state["selected_conversation"] = None  # Ensure it's always initialized
+
+if selected_convo and st.session_state["selected_conversation"] != selected_convo:
+
         st.session_state["selected_conversation"] = selected_convo
         st.session_state["messages"] = load_chat_history(username, selected_convo)
 
