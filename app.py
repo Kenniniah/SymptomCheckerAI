@@ -21,7 +21,7 @@ def login():
             st.session_state["authenticated"] = True
             st.session_state["username"] = username
             st.success(f"Welcome {username}!")
-            st.rerun()  # Refresh the page after login
+            st.switch_page("pages/chat.py")  # Refresh the page after login
         else:
             st.error("Invalid username or password")
 
@@ -36,17 +36,28 @@ def register():
         hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
         if register_user(username, name, hashed_password):
             st.success("Registration successful! Please log in.")
-            st.rerun()  # Refresh to show login page
+            st.switch_page("pages/chat.py")  # Refresh to show login page
         else:
             st.error("Username already exists")
 
-# Choose between Login & Register
-def main():
-    option = st.sidebar.radio("Select an option", ["Login", "Register"])
-    if option == "Login":
-        login()
-    else:
-        register()
+# Reset Password
+def reset():
+    st.subheader("Reset Password")
+    username = st.text_input("Username")
+    new_password = st.text_input("New Password", type="password")
+    
+    if st.button("Reset Password"):
+        if reset_password(username, new_password):
+            st.success("Password reset successful!")
+            st.switch_page("app.py")  # Switch back to login page after password reset
+        else:
+            st.error("Failed to reset password. Please check the username.")
 
-if __name__ == "__main__":
-    main()
+# Choose between Login, Register, or Reset Password
+option = st.sidebar.radio("Select an option", ["Login", "Register", "Reset Password"])
+if option == "Login":
+    login()
+elif option == "Register":
+    register()
+else:
+    reset()

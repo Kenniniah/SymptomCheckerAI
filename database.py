@@ -64,6 +64,14 @@ def save_message(username, role, content):
     conn.commit()
     conn.close()
 
+# Delete conversation history for a user (Delete)
+def delete_conversation(username):
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM chat_history WHERE username = ?", (username,))
+    conn.commit()
+    conn.close()
+
 # Load chat history (Read)
 def load_chat_history(username):
     conn = connect_db()
