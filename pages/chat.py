@@ -5,23 +5,26 @@ response = requests.post(url, json=data, headers=headers, timeout=30)  # 30 sec 
 from database import get_conversations, save_message, load_chat_history, delete_conversation
 
 # Use ngrok URL
-OLLAMA_SERVER_URL =  " https://ab12-112-210-231-149.ngrok-free.app"
+#OLLAMA_SERVER_URL =  " https://ab12-112-210-231-149.ngrok-free.app"
 
 # Function to chat with Ollama
 def chat_with_ollama(prompt):
-    url = f"{OLLAMA_SERVER_URL}/api/chat"
+    OLLAMA_SERVER_URL = "https://ab12-112-210-231-149.ngrok-free.app"  # Ensure the URL is defined
+    url = f"{OLLAMA_SERVER_URL}/api/chat"  # Define the API endpoint
+
     headers = {"Content-Type": "application/json"}
     data = {
-        "model": "mistral",
+        "model": "mistral",  # Use the correct model
         "messages": [{"role": "user", "content": prompt}]
     }
 
     try:
-        response = requests.post(url, json=data, headers=headers)
-        response.raise_for_status()
+        response = requests.post(url, json=data, headers=headers, timeout=30)  # Set timeout
+        response.raise_for_status()  # Raise an error if response is not 200
         return response.json()["message"]["content"]
     except requests.exceptions.RequestException as e:
         return f"Error: Could not connect to Ollama ({str(e)})"
+
 
 # Streamlit UI Setup
 st.set_page_config(page_title="Chat", layout="wide")
