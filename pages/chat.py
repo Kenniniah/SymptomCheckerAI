@@ -2,7 +2,7 @@ import streamlit as st
 import ollama
 from database import save_message, load_chat_history
 
-st.title("Chatbot")
+st.title("Symptom Checker AI")
 
 # Ensure the user is authenticated
 if "authenticated" not in st.session_state or not st.session_state["authenticated"]:
@@ -36,9 +36,11 @@ if prompt:
     # Save user message
     save_message(st.session_state["username"], "user", prompt)
 
-    # Get assistant's response using Ollama
-    result = ollama.chat(model="llama3.2:3b", messages=[{"role": "user", "content": prompt}])
-    response = result["message"]["content"]
+    # Show a spinner while the Symptom Checker AI processes the request
+    with st.spinner("Checking symptoms... Please wait."):
+        # Get assistant's response using Ollama
+        result = ollama.chat(model="llama3.2:3b", messages=[{"role": "user", "content": prompt}])
+        response = result["message"]["content"]
 
     # Save assistant's response
     save_message(st.session_state["username"], "assistant", response)
