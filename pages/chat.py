@@ -6,6 +6,15 @@ st.set_page_config(page_title="Chat", layout="wide")
 
 st.title("Symptom Checker AI")
 
+try:
+    result = ollama.chat(model="llama3", messages=[{"role": "user", "content": "Hello"}])
+    response = result["message"]["content"]
+except Exception as e:
+    response = "Error: Could not connect to Ollama. Please check if it's running."
+    st.error(response)
+
+st.write(response)
+
 # Ensure the user is authenticated
 if "authenticated" not in st.session_state or not st.session_state["authenticated"]:
     st.warning("You need to log in first.")
