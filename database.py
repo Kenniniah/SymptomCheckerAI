@@ -10,34 +10,33 @@ def create_tables():
     conn = connect_db()
     cursor = conn.cursor()
     
+    # Create users table if it does not exist
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS users (
         username TEXT PRIMARY KEY,
-        name TEXT,
+        first_name TEXT,
+        last_name TEXT,
+        date_of_birth TEXT,
+        gender TEXT,
+        marital_status TEXT,
+        occupancy TEXT,
         password TEXT
-    )
-    """)
-    
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS chat_history (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT,
-        conversation TEXT,  -- Add conversation name
-        role TEXT,
-        content TEXT,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
+    );
     """)
     
     conn.commit()
     conn.close()
 
 # Register user
-def register_user(username, name, password):
+def register_user(username, first_name, last_name, date_of_birth, gender, marital_status, occupancy, password):
     conn = connect_db()
     cursor = conn.cursor()
+    
     try:
-        cursor.execute("INSERT INTO users (username, name, password) VALUES (?, ?, ?)", (username, name, password))
+        cursor.execute("""
+        INSERT INTO users (username, first_name, last_name, date_of_birth, gender, marital_status, occupancy, password)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (username, first_name, last_name, date_of_birth, gender, marital_status, occupancy, password))
         conn.commit()
         return True
     except sqlite3.IntegrityError:
@@ -49,11 +48,15 @@ def register_user(username, name, password):
 def verify_user(username, password):
     conn = connect_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT password FROM users WHERE username = ?", (username,))
-    user = cursor.fetchone()
+    
+    cursor.execute("""
+    SELECT password FROM users WHERE username = ?
+    """, (username,))
+    result = cursor.fetchone()
+    
     conn.close()
-
-    if user and bcrypt.checkpw(password.encode(), user[0].encode()):
+    
+    if result and bcrypt.checkpw(password.encode(), result[0].encode()):
         return True
     return False
 
@@ -100,6 +103,17 @@ def delete_conversation(username, conversation):
         "DELETE FROM chat_history WHERE username = ? AND conversation = ?",
         (username, conversation)
     )
+    conn.commit()
+    conn.close()
+
+# Save biometric data
+def save_biometrics(username, height, weight, blood_pressure, body_temperature, date_measured):
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO biometrics (username, height, weight, blood_pressure, body_temperature, date_measured) 
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (username, height, weight, blood_pressure, body_temperature, date_measured))
     conn.commit()
     conn.close()
 
